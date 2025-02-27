@@ -1,8 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"github.com/gin-gonic/autotls"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/acme/autocert"
 	"io"
 	"log"
 	"mime"
@@ -14,6 +17,9 @@ import (
 )
 
 func main() {
+	domain := flag.String("domain", "", "domain name")
+	flag.Parse()
+
 	r := gin.Default()
 	r.GET("/*url", func(c *gin.Context) {
 		DownloadUrl := c.Param("url")
@@ -63,12 +69,22 @@ func main() {
 		}
 		c.Status(resp.StatusCode)
 		_, err = io.Copy(c.Writer, resp.Body)
-		//_, err = io.Copy(w, resp.Body)
 		if err != nil {
 			log.Printf("Error copying response body: %v", err)
 		}
 	})
-	r.Run()
+
+	if domain != nil {
+		m := autocert.Manager{
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(*domain),
+			Cache:      autocert.DirCache("/data/.cache"),
+		}
+
+		log.Fatal(autotls.RunWithManager(r, &m))
+	} else {
+		r.Run()
+	}
 }
 
 func isHopHeader(header string) bool {
