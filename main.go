@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/gin-gonic/autotls"
 	"github.com/gin-gonic/gin"
@@ -17,12 +18,13 @@ import (
 	"time"
 )
 
-var domain string
+var config string
 
 func init() {
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./")
+	flag.StringVar(&config, "config", "./noProxy.yaml", "configuration file path.")
+	flag.Parse()
+
+	viper.SetConfigFile(config)
 	err := viper.ReadInConfig()
 	if err != nil {
 		panic(fmt.Errorf("fatal error config file: %w", err))
