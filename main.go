@@ -23,6 +23,10 @@ func main() {
 	r := gin.Default()
 	r.GET("/*url", func(c *gin.Context) {
 		DownloadUrl := c.Param("url")
+		if DownloadUrl == "" {
+			c.String(http.StatusOK, "Hello World.")
+			return
+		}
 		DownloadUrl = DownloadUrl[1:len(DownloadUrl)]
 		targetURL, err := url.Parse(DownloadUrl)
 		if err != nil {
