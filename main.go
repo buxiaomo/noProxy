@@ -23,7 +23,7 @@ func main() {
 	r := gin.Default()
 	r.GET("/*url", func(c *gin.Context) {
 		DownloadUrl := c.Param("url")
-		if DownloadUrl == "" {
+		if DownloadUrl == "/" {
 			c.String(http.StatusOK, "Hello World.")
 			return
 		}
@@ -78,7 +78,7 @@ func main() {
 		}
 	})
 
-	if domain != nil {
+	if *domain != "" {
 		m := autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist(*domain),
