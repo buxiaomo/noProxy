@@ -1,10 +1,10 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"github.com/gin-gonic/autotls"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 	"golang.org/x/crypto/acme/autocert"
 	"io"
 	"log"
@@ -12,14 +12,24 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"sort"
 	"strings"
 	"time"
 )
 
-func main() {
-	domain := flag.String("domain", "", "domain name")
-	flag.Parse()
+var domain string
 
+func init() {
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath("./")
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf("fatal error config file: %w", err))
+	}
+}
+
+func main() {
 	r := gin.Default()
 	r.GET("/*url", func(c *gin.Context) {
 		DownloadUrl := c.Param("url")
@@ -31,6 +41,11 @@ func main() {
 		targetURL, err := url.Parse(DownloadUrl)
 		if err != nil {
 			c.String(http.StatusOK, "Parse url failed.")
+			return
+		}
+
+		if in(targetURL.Host, viper.GetStringSlice("whiteList")) == false {
+			c.String(http.StatusOK, "target domain name is in whiteList.")
 			return
 		}
 
@@ -78,10 +93,10 @@ func main() {
 		}
 	})
 
-	if *domain != "" {
+	if viper.GetString("domainName") != "" {
 		m := autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
-			HostPolicy: autocert.HostWhitelist(*domain),
+			HostPolicy: autocert.HostWhitelist(viper.GetString("domainName")),
 			Cache:      autocert.DirCache("/data/.cache"),
 		}
 
@@ -106,6 +121,16 @@ func isHopHeader(header string) bool {
 		if strings.EqualFold(header, h) {
 			return true
 		}
+	}
+	return false
+}
+
+func in(target string, str_array []string) bool {
+	sort.Strings(str_array)
+	index := sort.SearchStrings(str_array, target)
+	//index的取值：[0,len(str_array)]
+	if index < len(str_array) && str_array[index] == target { //需要注意此处的判断，先判断 &&左侧的条件，如果不满足则结束此处判断，不会再进行右侧的判断
+		return true
 	}
 	return false
 }

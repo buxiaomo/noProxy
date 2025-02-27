@@ -1,3 +1,4 @@
-white:
+domainName: "noproxy.xiaomo.site"
+whiteList:
   - "download.docker.com"
   - "github.com"
