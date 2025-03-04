@@ -82,13 +82,17 @@ func DockerHandler(c *gin.Context) {
 	//log.Printf("Received request for: %s", originalURL)
 	targetURL := fmt.Sprintf("https://%s", originalURL[1:len(originalURL)])
 	t, err := url.Parse(targetURL)
+
 	if err != nil {
 		//log.Printf("Error parsing URL: %s", targetURL)
 		c.String(http.StatusOK, err.Error())
 		return
 	}
 
-	//log.Printf("target url: %s", targetURL)
+	if in(t.Host, viper.GetStringSlice("whiteList")) == false {
+		c.String(http.StatusOK, "target domain name is not in whiteList.")
+		return
+	}
 
 	// 解析路径，去除 "/k8s.gcr.io" 前缀，使其符合 Docker Registry 规范
 	cleanPath := strings.TrimPrefix(targetURL, fmt.Sprintf("https://%s", t.Host))
