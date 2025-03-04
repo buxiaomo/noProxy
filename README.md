@@ -38,7 +38,7 @@ wget https://duqqpwojzauy.cloud.sealos.io/https://github.com/mikefarah/yq/releas
 
 ### docker镜像代理下载
 
-> 格式: `duqqpwojzauy.cloud.sealos.io/d/<target pull url>`
+> 格式: `duqqpwojzauy.cloud.sealos.io/<target pull url>`
 
 ```shell
 docker pull duqqpwojzauy.cloud.sealos.io/docker.io/library/nginx:1.27
