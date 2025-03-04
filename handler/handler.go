@@ -79,7 +79,7 @@ func ProxyHandler(c *gin.Context) {
 
 func DockerHandler(c *gin.Context) {
 	originalURL := c.Param("proxyPath")
-	log.Printf("Received request for: %s", originalURL)
+	//log.Printf("Received request for: %s", originalURL)
 	targetURL := fmt.Sprintf("https://%s", originalURL[1:len(originalURL)])
 	t, err := url.Parse(targetURL)
 	if err != nil {
@@ -88,15 +88,15 @@ func DockerHandler(c *gin.Context) {
 		return
 	}
 
-	log.Printf("target url: %s", targetURL)
+	//log.Printf("target url: %s", targetURL)
 
 	// 解析路径，去除 "/k8s.gcr.io" 前缀，使其符合 Docker Registry 规范
 	cleanPath := strings.TrimPrefix(targetURL, fmt.Sprintf("https://%s", t.Host))
-	//log.Println(cleanPath)
 
 	proxyURL := fmt.Sprintf("https://%s/v2%s", t.Host, cleanPath)
-	log.Printf("Proxying request to: %s", proxyURL)
+	proxyURL = strings.ReplaceAll(proxyURL, "docker.io", "registry-1.docker.io")
 
+	//log.Printf("Proxying request to: %s", proxyURL)
 	// 创建 HTTP 请求，支持 HEAD/GET 方法
 	req, err := http.NewRequest(c.Request.Method, proxyURL, nil)
 	if err != nil {
@@ -137,5 +137,5 @@ func DockerHandler(c *gin.Context) {
 		io.Copy(c.Writer, resp.Body)
 	}
 
-	log.Printf("Successfully proxied request for: %s", originalURL)
+	//log.Printf("Successfully proxied request for: %s", originalURL)
 }
