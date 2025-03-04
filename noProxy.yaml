@@ -11,3 +11,5 @@ whiteList:
   - "k8s.gcr.io"
   - "nvcr.io"
   - "quay.io"
+  - "dl.k8s.io"
+  - "cdn.dl.k8s.io"

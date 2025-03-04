@@ -33,7 +33,8 @@ ghcr.io/buxiaomo/noproxy:latest
 > 格式: `https://duqqpwojzauy.cloud.sealos.io/d/<target download url>`
 
 ```shell
-wget https://duqqpwojzauy.cloud.sealos.io/https://github.com/mikefarah/yq/releases/download/v4.45.1/yq_linux_amd64
+wget https://duqqpwojzauy.cloud.sealos.io/d/https://github.com/mikefarah/yq/releases/download/v4.45.1/yq_linux_amd64
+wget https://duqqpwojzauy.cloud.sealos.io/d/https://dl.k8s.io/v1.32.2/bin/linux/amd64/kube-apiserver
 ```
 
 ### docker镜像代理下载
