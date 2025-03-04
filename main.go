@@ -47,7 +47,7 @@ func main() {
 		}
 
 		if in(targetURL.Host, viper.GetStringSlice("whiteList")) == false {
-			c.String(http.StatusOK, "target domain name is in whiteList.")
+			c.String(http.StatusOK, "target domain name is not in whiteList.")
 			return
 		}
 
