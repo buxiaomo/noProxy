@@ -27,6 +27,8 @@ ghcr.io/buxiaomo/noproxy:latest
 ## 公益仓库
 
 > 测试域名: `duqqpwojzauy.cloud.sealos.io`
+> 
+> <b>下载速度取决于服务器带宽
 
 ### github文件代理下载
 
@@ -46,7 +48,7 @@ docker pull duqqpwojzauy.cloud.sealos.io/docker.io/library/nginx:1.27
 docker pull duqqpwojzauy.cloud.sealos.io/docker.elastic.co/elasticsearch/elasticsearch:7.17.9
 ```
 
-## 目前支持的白名单
+## 域名白名单
 
 - download.docker.com
 - github.com
@@ -59,6 +61,8 @@ docker pull duqqpwojzauy.cloud.sealos.io/docker.elastic.co/elasticsearch/elastic
 - k8s.gcr.io
 - nvcr.io
 - quay.io
+- dl.k8s.io
+- cdn.dl.k8s.io
 
 ## 支持这个项目
 ### 用爱发电
