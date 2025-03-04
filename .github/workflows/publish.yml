@@ -21,4 +21,4 @@ jobs:
           echo ${{ secrets.PASSWORD }} | docker login ghcr.io --username ${{ secrets.USERNAME }} --password-stdin >/dev/null
           docker run --privileged --rm tonistiigi/binfmt --install all
           docker buildx create --use --bootstrap --name multi-platform --driver docker-container
-          docker buildx build --platform=amd64,arm64 -t ghcr.io/buxiaomo/noproxy:${GITHUB_SHA::6} --push .
+          docker buildx build --platform=amd64,arm64 -t ghcr.io/buxiaomo/noproxy:${GITHUB_SHA::6} -t ghcr.io/buxiaomo/noproxy:latest --push .
