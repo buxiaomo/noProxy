@@ -16,10 +16,6 @@ import (
 
 func ProxyHandler(c *gin.Context) {
 	DownloadUrl := c.Param("url")
-	if DownloadUrl == "/d/" {
-		c.String(http.StatusOK, "Hello World.")
-		return
-	}
 	DownloadUrl = DownloadUrl[1:len(DownloadUrl)]
 	log.Println("DownloadUrl:", DownloadUrl)
 	targetURL, err := url.Parse(DownloadUrl)
@@ -82,7 +78,6 @@ func DockerHandler(c *gin.Context) {
 	//log.Printf("Received request for: %s", originalURL)
 	targetURL := fmt.Sprintf("https://%s", originalURL[1:len(originalURL)])
 	t, err := url.Parse(targetURL)
-
 	if err != nil {
 		//log.Printf("Error parsing URL: %s", targetURL)
 		c.String(http.StatusOK, err.Error())

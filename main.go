@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/acme/autocert"
 	"log"
+	"net/http"
 	"noProxy/handler"
 )
 
@@ -26,6 +27,10 @@ func init() {
 
 func main() {
 	r := gin.Default()
+	r.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusPermanentRedirect, "https://github.com/buxiaomo/noProxy")
+		return
+	})
 	r.Any("/v2/*proxyPath", handler.DockerHandler) // 允许 GET 和 HEAD 请求
 	r.GET("/d/*url", handler.ProxyHandler)
 
