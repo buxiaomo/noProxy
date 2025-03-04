@@ -1,0 +1,24 @@
+name: Publish Package
+
+on:
+  push:
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Info
+        run: |
+          docker info
+          cat /etc/docker/daemon.json
+
+      - name: Build images
+        run: |
+          echo ${{ secrets.PASSWORD }} | docker login ghcr.io --username ${{ secrets.USERNAME }} --password-stdin >/dev/null
+          docker run --privileged --rm tonistiigi/binfmt --install all
+          docker buildx create --use --bootstrap --name multi-platform --driver docker-container
+          docker buildx build --platform=amd64,arm64 -t ghcr.io/buxiaomo/noproxy:${GITHUB_SHA::6} --push .
