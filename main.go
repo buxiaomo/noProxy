@@ -33,7 +33,8 @@ func main() {
 
 	// 添加HTTP到HTTPS重定向中间件
 	r.Use(func(c *gin.Context) {
-		if c.Request.Header.Get("X-Forwarded-Proto") != "https" && !strings.HasPrefix(c.Request.Host, "localhost") {
+		// 检查是否已经是HTTPS请求
+		if c.Request.Header.Get("X-Forwarded-Proto") == "http" && !strings.HasPrefix(c.Request.Host, "localhost") {
 			target := "https://" + c.Request.Host + c.Request.RequestURI
 			c.Redirect(http.StatusMovedPermanently, target)
 			c.Abort()
