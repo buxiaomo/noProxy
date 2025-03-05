@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"sort"
@@ -70,12 +71,16 @@ func parseAuthHeader(header string) (string, string, string) {
 
 // 获取Docker Registry的认证token
 func getAuthToken(realm, service, scope string) (string, error) {
+	log.Printf("[getAuthToken] 开始获取认证token, realm: %s, service: %s, scope: %s", realm, service, scope)
+
 	if realm == "" {
+		log.Printf("[getAuthToken] 认证realm为空")
 		return "", fmt.Errorf("认证realm为空")
 	}
 
 	// 特殊处理docker.io的认证
 	if strings.Contains(realm, "auth.docker.io") {
+		log.Printf("[getAuthToken] 检测到docker.io认证，使用特殊处理")
 		realm = "https://auth.docker.io/token"
 	}
 
@@ -88,18 +93,24 @@ func getAuthToken(realm, service, scope string) (string, error) {
 	}
 
 	authURL := fmt.Sprintf("%s?%s", realm, params.Encode())
+	log.Printf("[getAuthToken] 发送认证请求: %s", authURL)
+
 	resp, err := http.Get(authURL)
 	if err != nil {
+		log.Printf("[getAuthToken] 请求认证服务失败: %v", err)
 		return "", fmt.Errorf("请求认证服务失败: %v", err)
 	}
 	defer resp.Body.Close()
 
+	log.Printf("[getAuthToken] 认证服务响应状态码: %d", resp.StatusCode)
 	if resp.StatusCode != http.StatusOK {
+		log.Printf("[getAuthToken] 认证服务返回错误状态码: %d", resp.StatusCode)
 		return "", fmt.Errorf("认证服务返回错误状态码: %d", resp.StatusCode)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		log.Printf("[getAuthToken] 读取认证响应失败: %v", err)
 		return "", fmt.Errorf("读取认证响应失败: %v", err)
 	}
 
@@ -108,8 +119,10 @@ func getAuthToken(realm, service, scope string) (string, error) {
 	}
 
 	if err := json.Unmarshal(body, &tokenResp); err != nil {
+		log.Printf("[getAuthToken] 解析认证响应失败: %v", err)
 		return "", fmt.Errorf("解析认证响应失败: %v", err)
 	}
 
+	log.Printf("[getAuthToken] 成功获取认证token")
 	return tokenResp.Token, nil
 }

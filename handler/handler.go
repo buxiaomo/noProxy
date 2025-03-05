@@ -123,7 +123,6 @@ func DockerHandler(c *gin.Context) {
 	defer resp.Body.Close()
 
 	// 处理Docker Registry的认证
-	fmt.Println(resp.StatusCode, http.StatusUnauthorized, resp.StatusCode == http.StatusUnauthorized)
 	if resp.StatusCode == http.StatusUnauthorized {
 		authHeader := resp.Header.Get("WWW-Authenticate")
 		log.Printf("[DockerHandler] 收到认证头: %s", authHeader)
@@ -137,7 +136,6 @@ func DockerHandler(c *gin.Context) {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "认证失败"})
 				return
 			}
-			fmt.Println(token)
 			// 使用token重新发送请求
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 			resp, err = client.Do(req)
