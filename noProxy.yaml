@@ -12,3 +12,8 @@ whiteList:
   - "quay.io"
   - "dl.k8s.io"
   - "cdn.dl.k8s.io"
+
+# Docker Hub认证配置
+dockerhub:
+  username: "" # 你的Docker Hub用户名
+  password: "" # 你的Docker Hub密码

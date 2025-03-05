@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,6 +10,8 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+
+	"github.com/spf13/viper"
 )
 
 func isHopHeader(header string) bool {
@@ -97,10 +100,28 @@ func getAuthToken(realm, service, scope string) (string, error) {
 		params.Set("scope", scope)
 	}
 
+	// 从配置中获取Docker Hub的认证信息
+	username := viper.GetString("dockerhub.username")
+	password := viper.GetString("dockerhub.password")
+
 	authURL := fmt.Sprintf("%s?%s", realm, params.Encode())
 	log.Printf("[getAuthToken] 发送认证请求: %s", authURL)
 
-	resp, err := http.Get(authURL)
+	req, err := http.NewRequest("GET", authURL, nil)
+	if err != nil {
+		log.Printf("[getAuthToken] 创建请求失败: %v", err)
+		return "", fmt.Errorf("创建请求失败: %v", err)
+	}
+
+	// 如果配置了Docker Hub的认证信息，添加到请求头
+	if username != "" && password != "" && strings.Contains(realm, "auth.docker.io") {
+		auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password)))
+		req.Header.Set("Authorization", fmt.Sprintf("Basic %s", auth))
+		log.Printf("[getAuthToken] 使用Docker Hub认证信息")
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("[getAuthToken] 请求认证服务失败: %v", err)
 		return "", fmt.Errorf("请求认证服务失败: %v", err)
