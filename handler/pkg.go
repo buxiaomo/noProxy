@@ -49,21 +49,27 @@ func in(target string, strArray []string) bool {
 
 // 解析Docker Registry的WWW-Authenticate头部
 func parseAuthHeader(header string) (string, string, string) {
+	// Bearer realm="https://auth.docker.io/token",service="registry.docker.io",scope="repository:grafana/grafana:pull"
 	if !strings.HasPrefix(header, "Bearer ") {
 		return "", "", ""
 	}
 
 	params := strings.TrimPrefix(header, "Bearer ")
-	fields := strings.Fields(params)
+	// 使用逗号分割参数
+	fields := strings.Split(params, ",")
 
 	var realm, service, scope string
 	for _, field := range fields {
+		// 去除前后空格
+		field = strings.TrimSpace(field)
+		// 使用等号分割键值对
 		parts := strings.SplitN(field, "=", 2)
 		if len(parts) != 2 {
 			continue
 		}
 
-		value := strings.Trim(parts[1], "\",")
+		// 去除值两端的引号
+		value := strings.Trim(parts[1], "\"")
 		switch parts[0] {
 		case "realm":
 			realm = value
