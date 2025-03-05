@@ -7,12 +7,10 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
-	"path"
-	"strings"
-	"time"
-
 	"noProxy/auth"
 	"noProxy/utils"
+	"path"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -42,10 +40,7 @@ func ProxyHandler(c *gin.Context) {
 		return
 	}
 
-	client := &http.Client{
-		Timeout: 30 * time.Minute,
-	}
-	resp, err := client.Get(DownloadUrl)
+	resp, err := utils.RetryableHTTPGet(DownloadUrl, 3)
 	if err != nil {
 		log.Printf("[ProxyHandler] 请求目标URL失败: %v", err)
 		c.String(http.StatusInternalServerError, fmt.Sprintf("获取资源失败: %v", err))
@@ -115,8 +110,7 @@ func DockerHandler(c *gin.Context) {
 		}
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := utils.GetHTTPClient().Do(req)
 	if err != nil {
 		log.Printf("[DockerHandler] 请求上游服务失败: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "请求上游服务失败"})
@@ -143,7 +137,7 @@ func DockerHandler(c *gin.Context) {
 			}
 			// 使用token重新发送请求
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-			resp, err = client.Do(req)
+			resp, err = utils.GetHTTPClient().Do(req)
 			if err != nil {
 				log.Printf("[DockerHandler] 使用token重新请求失败: %v", err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "认证请求失败"})
