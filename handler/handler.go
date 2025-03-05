@@ -152,7 +152,7 @@ func DockerHandler(c *gin.Context) {
 			defer resp.Body.Close()
 		}
 	}
-	resp.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	//resp.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	for key, values := range resp.Header {
 		for _, value := range values {
 			c.Writer.Header().Add(key, value)
