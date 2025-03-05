@@ -31,12 +31,17 @@ func isHopHeader(header string) bool {
 }
 
 func in(target string, strArray []string) bool {
+	if len(strArray) == 0 {
+		log.Printf("[in] 白名单为空，目标域名: %s", target)
+		return false
+	}
+
+	log.Printf("[in] 开始检查域名 %s 是否在白名单中", target)
 	sort.Strings(strArray)
 	index := sort.SearchStrings(strArray, target)
-	if index < len(strArray) && strArray[index] == target {
-		return true
-	}
-	return false
+	result := index < len(strArray) && strArray[index] == target
+	log.Printf("[in] 域名 %s 白名单检查结果: %v", target, result)
+	return result
 }
 
 // 解析Docker Registry的WWW-Authenticate头部
