@@ -137,7 +137,7 @@ func DockerHandler(c *gin.Context) {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "认证失败"})
 				return
 			}
-
+			fmt.Println(token)
 			// 使用token重新发送请求
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 			resp, err = client.Do(req)
