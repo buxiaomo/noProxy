@@ -126,7 +126,6 @@ func DockerHandler(c *gin.Context) {
 	if resp.StatusCode == http.StatusUnauthorized {
 		authHeader := resp.Header.Get("WWW-Authenticate")
 		log.Printf("[DockerHandler] 收到认证头: %s", authHeader)
-		log.Printf("[DockerHandler] 收到认证头: %v", authHeader != "")
 
 		if authHeader != "" {
 			// 解析认证信息

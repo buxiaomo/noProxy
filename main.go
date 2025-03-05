@@ -4,7 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"noProxy/handler"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/autotls"
@@ -28,6 +30,16 @@ func init() {
 
 func main() {
 	r := gin.Default()
+
+	// 添加HTTP到HTTPS重定向中间件
+	r.Use(func(c *gin.Context) {
+		if c.Request.Header.Get("X-Forwarded-Proto") != "https" && !strings.HasPrefix(c.Request.Host, "localhost") {
+			target := "https://" + c.Request.Host + c.Request.RequestURI
+			c.Redirect(http.StatusMovedPermanently, target)
+			c.Abort()
+			return
+		}
+	})
 
 	// 添加健康检查端点
 	r.GET("/health", func(c *gin.Context) {
