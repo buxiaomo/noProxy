@@ -160,6 +160,7 @@ func DockerHandler(c *gin.Context) {
 
 	if c.Request.Method != http.MethodHead {
 		copied, err := io.Copy(c.Writer, resp.Body)
+		log.Printf("[DockerHandler] resp.Header.Authorization: %s", resp.Header.Get("Authorization"))
 		if err != nil {
 			log.Printf("[DockerHandler] 复制响应内容失败: %v", err)
 		} else {
