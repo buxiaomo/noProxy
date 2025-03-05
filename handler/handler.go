@@ -122,6 +122,7 @@ func DockerHandler(c *gin.Context) {
 	}
 	defer resp.Body.Close()
 
+	var Authorization string
 	// 处理Docker Registry的认证
 	if resp.StatusCode == http.StatusUnauthorized {
 		authHeader := resp.Header.Get("WWW-Authenticate")
@@ -131,15 +132,16 @@ func DockerHandler(c *gin.Context) {
 			// 解析认证信息
 			realm, service, scope := parseAuthHeader(authHeader)
 			// 获取认证token
-			token, err := getAuthToken(realm, service, scope)
-			log.Printf("[DockerHandler] 获取到的token: %s", token)
+			Authorization, err := getAuthToken(realm, service, scope)
+			log.Printf("[DockerHandler] 获取到的token: %s", Authorization)
+
 			if err != nil {
 				log.Printf("[DockerHandler] 获取认证token失败: %v", err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "认证失败"})
 				return
 			}
 			// 使用token重新发送请求
-			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", Authorization))
 			resp, err = client.Do(req)
 			if err != nil {
 				log.Printf("[DockerHandler] 使用token重新请求失败: %v", err)
@@ -149,7 +151,7 @@ func DockerHandler(c *gin.Context) {
 			defer resp.Body.Close()
 		}
 	}
-
+	resp.Header.Set("Authorization", fmt.Sprintf("Bearer %s", Authorization))
 	for key, values := range resp.Header {
 		for _, value := range values {
 			c.Writer.Header().Add(key, value)
