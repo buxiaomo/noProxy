@@ -81,7 +81,6 @@ func ProxyHandler(c *gin.Context) {
 func DockerHandler(c *gin.Context) {
 	originalURL := c.Param("proxyPath")
 	targetURL := fmt.Sprintf("https://%s", originalURL[1:len(originalURL)])
-	log.Printf("[DockerHandler] 收到Docker镜像请求: %s, 客户端IP: %s", targetURL, c.ClientIP())
 
 	t, err := url.Parse(targetURL)
 	if err != nil {
@@ -99,7 +98,7 @@ func DockerHandler(c *gin.Context) {
 	cleanPath := strings.TrimPrefix(targetURL, fmt.Sprintf("https://%s", t.Host))
 	proxyURL := fmt.Sprintf("https://%s/v2%s", t.Host, cleanPath)
 	proxyURL = strings.ReplaceAll(proxyURL, "docker.io", "registry-1.docker.io")
-
+	log.Printf("[DockerHandler] 收到Docker镜像请求: %s, 客户端IP: %s", proxyURL, c.ClientIP())
 	req, err := http.NewRequest(c.Request.Method, proxyURL, nil)
 	if err != nil {
 		log.Printf("[DockerHandler] 创建请求失败: %v", err)
