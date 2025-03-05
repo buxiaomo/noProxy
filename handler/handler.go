@@ -11,6 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"noProxy/auth"
+	"noProxy/utils"
+
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
@@ -27,7 +30,7 @@ func ProxyHandler(c *gin.Context) {
 		return
 	}
 
-	if in(targetURL.Host, viper.GetStringSlice("whiteList")) == false {
+	if !utils.InWhiteList(targetURL.Host, viper.GetStringSlice("whiteList")) {
 		log.Printf("[ProxyHandler] 域名不在白名单中: %s", targetURL.Host)
 		c.String(http.StatusForbidden, "目标域名不在白名单中")
 		return
@@ -51,7 +54,7 @@ func ProxyHandler(c *gin.Context) {
 	defer resp.Body.Close()
 
 	for k, vv := range resp.Header {
-		if isHopHeader(k) {
+		if utils.IsHopHeader(k) {
 			continue
 		}
 		for _, v := range vv {
@@ -89,7 +92,7 @@ func DockerHandler(c *gin.Context) {
 		return
 	}
 
-	if in(t.Host, viper.GetStringSlice("whiteList")) == false {
+	if !utils.InWhiteList(t.Host, viper.GetStringSlice("whiteList")) {
 		log.Printf("[DockerHandler] 域名不在白名单中: %s", t.Host)
 		c.String(http.StatusForbidden, "目标域名不在白名单中")
 		return
@@ -112,11 +115,6 @@ func DockerHandler(c *gin.Context) {
 		}
 	}
 
-	//if t.Host == "docker.io" {
-	//	//token :=
-	//	req.Header.Add("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsIng1YyI6WyJNSUlFRmpDQ0F2NmdBd0lCQWdJVUlvQW42a0k2MUs3bTAwNVhqcXVpKzRDTzVUb3dEUVlKS29aSWh2Y05BUUVMQlFBd2dZWXhDekFKQmdOVkJBWVRBbFZUTVJNd0VRWURWUVFJRXdwRFlXeHBabTl5Ym1saE1SSXdFQVlEVlFRSEV3bFFZV3h2SUVGc2RHOHhGVEFUQmdOVkJBb1RERVJ2WTJ0bGNpd2dTVzVqTGpFVU1CSUdBMVVFQ3hNTFJXNW5hVzVsWlhKcGJtY3hJVEFmQmdOVkJBTVRHRVJ2WTJ0bGNpd2dTVzVqTGlCRmJtY2dVbTl2ZENCRFFUQWVGdzB5TkRBNU1qUXlNalUxTURCYUZ3MHlOVEE1TWpReU1qVTFNREJhTUlHRk1Rc3dDUVlEVlFRR0V3SlZVekVUTUJFR0ExVUVDQk1LUTJGc2FXWnZjbTVwWVRFU01CQUdBMVVFQnhNSlVHRnNieUJCYkhSdk1SVXdFd1lEVlFRS0V3eEViMk5yWlhJc0lFbHVZeTR4RkRBU0JnTlZCQXNUQzBWdVoybHVaV1Z5YVc1bk1TQXdIZ1lEVlFRREV4ZEViMk5yWlhJc0lFbHVZeTRnUlc1bklFcFhWQ0JEUVRDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTGRWRDVxNlJudkdETUxPVysrR1MxWENwR2FRRHd0V3FIS2tLYlM5cVlJMXdCallKWEJ6U2MweTBJK0swU0lVd2pqNGJJT3ZpNXNyOGhJajdReGhrY1ppTlU1OEE5NW5BeGVFS3lMaU9QU0tZK3Y5VnZadmNNT2NwVW1xZ1BxWkhoeTVuMW8xbGxmek92dTd5SDc4a1FyT0lTMTZ3RFVVZm8yRkxPaERDaElsbCtYa2VlbFB6c0tiRWo3ZGJqdXV6RGxIODlWaE4yenNWNFV3c244UVpGVTB4V00wb3R2d0lQN3k0UDZGWDBuUFJuTVQyMlRIajVIWVJ3SUFVdm1FN0l3YlZVQ2wvM1hPaGhwbGNJZFQxREZGOUJUMHJOUC93ZTBWMklId1RHdVdTVENWb3M2b3R5ekk3a1hEdGZzeWRjU2Q5TklpSXZITHFYamJPVGtidWVjQ0F3RUFBYU43TUhrd0RnWURWUjBQQVFIL0JBUURBZ0dtTUJNR0ExVWRKUVFNTUFvR0NDc0dBUVVGQndNQk1CSUdBMVVkRXdFQi93UUlNQVlCQWY4Q0FRQXdIUVlEVlIwT0JCWUVGSmZWdXV4Vko3UXh1amlMNExZajFjQjEzbWhjTUI4R0ExVWRJd1FZTUJhQUZDNjBVUE5lQmtvZ1kyMnRYUGNCTUhGdkczQ3NNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUFiQkdlZHZVVzhOVWp1VXJWbDlrWmMybDRDbjhJbDFzeVBVTDNYVXdQSHprcy9iUFJ4S1loeFlIODdOb1NwdDZJT3ZPS0k3ZCthQmoyM1lldTdDWGltTWxMUWl4UGhwQ0J0dC92Vmx1UXNJbVZXZXBJWCtraENienNGemtNbUNpbHo1OXVxOURiaGg3VUw1NjQxUjdFQ2pZc0h0Y2RKeURXRWFqMXFEVFoyOUUwY1UvWmhmbmsrVFVOTExkNjYxNldCREQ3TDlSNkgzK3VkRXBRRDFlcXYzU1YwczY3R2ZVT3l0RXhzMVRja3U4aUJCdnJLbnhZa3BZMVZDbW5UMUxSaFo4K283YU94YjR4ZHByMFR6ZnBqN3BidEhWQnQwSGNUUlpIdG54MkhCN3pzWXRFZUl3eVE3bGhhMVJ4eDJNQmR0R2tBREFLUk9RRnpmMEJubm91TSJdfQ.eyJhY2Nlc3MiOlt7ImFjdGlvbnMiOlsicHVsbCJdLCJuYW1lIjoibGlicmFyeS9uZ2lueCIsInBhcmFtZXRlcnMiOnsicHVsbF9saW1pdCI6IjEwMCIsInB1bGxfbGltaXRfaW50ZXJ2YWwiOiIyMTYwMCJ9LCJ0eXBlIjoicmVwb3NpdG9yeSJ9XSwiYXVkIjoicmVnaXN0cnkuZG9ja2VyLmlvIiwiZXhwIjoxNzQxMTU3NDY5LCJpYXQiOjE3NDExNTcxNjksImlzcyI6ImF1dGguZG9ja2VyLmlvIiwianRpIjoiZGNrcl9qdGlfc3NncFoydWVRNThNVm1uX0h1TzBuQ2hmOEp3PSIsIm5iZiI6MTc0MTE1Njg2OSwic3ViIjoiIn0.DgRdgfgik0R3KpkfubQJVRi2wHJbBBBrx11SptC3dh9MejNb3zW9f_bak2T_uWKQVaJ1qpIGgTp_OYBYeSt-2X_Afdsj0jhbxaFXKxGC6wP9I9CDX9Cw8NbLOFWHjkeXQPny8Mu0oQOBZaOR-hbIqc6y3NO09RpoutABsd3Wq4rfrdP5umr8nEA4KEFipq6hFwbkl0u-rfEFqgyYqCeHD_kY-uoWjg3EteYl_LZfh80EKKWci4p4pXJPSVb_xBlgk3mDIxfSbXeFFeyn7KH-F8S2Ok2yHj9N79_GJHjHYTu2gl2-xokE8PY4u5zAX9R8K20ItJjImEZTVY4VKshx8A")
-	//}
-
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -133,11 +131,10 @@ func DockerHandler(c *gin.Context) {
 
 		if authHeader != "" {
 			// 解析认证信息
-			realm, service, scope := parseAuthHeader(authHeader)
-			log.Println(realm, service, scope)
+			realm, service, scope := auth.ParseAuthHeader(authHeader)
+
 			// 获取认证token
-			token, err := getAuthToken(realm, service, scope)
-			log.Printf("[DockerHandler] 获取到的token: %s", token)
+			token, err := auth.GetAuthToken(realm, service, scope)
 
 			if err != nil {
 				log.Printf("[DockerHandler] 获取认证token失败: %v", err)
@@ -145,7 +142,7 @@ func DockerHandler(c *gin.Context) {
 				return
 			}
 			// 使用token重新发送请求
-			// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", Authorization))
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 			resp, err = client.Do(req)
 			if err != nil {
 				log.Printf("[DockerHandler] 使用token重新请求失败: %v", err)
@@ -153,9 +150,10 @@ func DockerHandler(c *gin.Context) {
 				return
 			}
 			defer resp.Body.Close()
+			fmt.Println(resp.StatusCode)
 		}
 	}
-	//resp.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
 	for key, values := range resp.Header {
 		for _, value := range values {
 			c.Writer.Header().Add(key, value)
