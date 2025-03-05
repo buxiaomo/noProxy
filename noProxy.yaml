@@ -4,7 +4,6 @@ whiteList:
   - "github.com"
   - "get.docker.com"
   - "docker.io"
-  - "k8s.gcr.io"
   - "docker.elastic.co"
   - "gcr.io"
   - "ghcr.io"

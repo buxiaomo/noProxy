@@ -3,12 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+	"noProxy/handler"
+	"time"
+
 	"github.com/gin-gonic/autotls"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/acme/autocert"
-	"log"
-	"noProxy/handler"
 )
 
 var config string
@@ -26,7 +28,16 @@ func init() {
 
 func main() {
 	r := gin.Default()
-	r.Any("/v2/*proxyPath", handler.DockerHandler) // 允许 GET 和 HEAD 请求
+
+	// 添加健康检查端点
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status":    "ok",
+			"timestamp": time.Now().Unix(),
+		})
+	})
+
+	r.Any("/v2/*proxyPath", handler.DockerHandler)
 	r.GET("/d/*url", handler.ProxyHandler)
 
 	if viper.GetString("domainName") != "" {

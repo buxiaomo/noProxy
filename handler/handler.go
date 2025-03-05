@@ -2,8 +2,6 @@ package handler
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 	"io"
 	"log"
 	"mime"
@@ -12,51 +10,56 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 )
 
 func ProxyHandler(c *gin.Context) {
 	DownloadUrl := c.Param("url")
 	DownloadUrl = DownloadUrl[1:len(DownloadUrl)]
-	log.Println("DownloadUrl:", DownloadUrl)
+	log.Printf("[ProxyHandler] 收到下载请求: %s, 客户端IP: %s", DownloadUrl, c.ClientIP())
+
 	targetURL, err := url.Parse(DownloadUrl)
 	if err != nil {
-		c.String(http.StatusOK, "Parse url failed.")
+		log.Printf("[ProxyHandler] URL解析失败: %v, URL: %s", err, DownloadUrl)
+		c.String(http.StatusBadRequest, "无效的URL格式")
 		return
 	}
 
 	if in(targetURL.Host, viper.GetStringSlice("whiteList")) == false {
-		c.String(http.StatusOK, "target domain name is not in whiteList.")
+		log.Printf("[ProxyHandler] 域名不在白名单中: %s", targetURL.Host)
+		c.String(http.StatusForbidden, "目标域名不在白名单中")
 		return
 	}
 
 	if targetURL.Scheme != "http" && targetURL.Scheme != "https" {
-		c.String(http.StatusBadRequest, "URL must be http or https")
+		log.Printf("[ProxyHandler] 不支持的协议: %s", targetURL.Scheme)
+		c.String(http.StatusBadRequest, "URL必须是http或https协议")
 		return
 	}
 
 	client := &http.Client{
-		Timeout: 30 * time.Minute, // 长超时以支持大文件下载
+		Timeout: 30 * time.Minute,
 	}
 	resp, err := client.Get(DownloadUrl)
 	if err != nil {
-		c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to fetch URL: %v", err))
+		log.Printf("[ProxyHandler] 请求目标URL失败: %v", err)
+		c.String(http.StatusInternalServerError, fmt.Sprintf("获取资源失败: %v", err))
 		return
 	}
 	defer resp.Body.Close()
 
-	// 过滤并复制响应头
 	for k, vv := range resp.Header {
 		if isHopHeader(k) {
 			continue
 		}
 		for _, v := range vv {
 			c.Header(k, v)
-			//w.Header().Add(k, v)
 		}
 	}
-	// 设置默认的Content-Disposition
+
 	if c.GetHeader("Content-Disposition") == "" {
-		//if w.Header().Get("Content-Disposition") == "" {
 		filename := path.Base(targetURL.Path)
 		if filename == "" || filename == "." {
 			filename = "download"
@@ -64,77 +67,103 @@ func ProxyHandler(c *gin.Context) {
 		params := map[string]string{"filename": filename}
 		disposition := mime.FormatMediaType("attachment", params)
 		c.Header("Content-Disposition", disposition)
-		//w.Header().Set("Content-Disposition", disposition)
 	}
+
 	c.Status(resp.StatusCode)
-	_, err = io.Copy(c.Writer, resp.Body)
+	copied, err := io.Copy(c.Writer, resp.Body)
 	if err != nil {
-		log.Printf("Error copying response body: %v", err)
+		log.Printf("[ProxyHandler] 复制响应内容失败: %v", err)
+	} else {
+		log.Printf("[ProxyHandler] 成功代理请求: %s, 传输大小: %d bytes", DownloadUrl, copied)
 	}
 }
 
 func DockerHandler(c *gin.Context) {
 	originalURL := c.Param("proxyPath")
-	//log.Printf("Received request for: %s", originalURL)
 	targetURL := fmt.Sprintf("https://%s", originalURL[1:len(originalURL)])
+	log.Printf("[DockerHandler] 收到Docker镜像请求: %s, 客户端IP: %s", targetURL, c.ClientIP())
+
 	t, err := url.Parse(targetURL)
 	if err != nil {
-		//log.Printf("Error parsing URL: %s", targetURL)
-		c.String(http.StatusOK, err.Error())
+		log.Printf("[DockerHandler] URL解析失败: %v, URL: %s", err, targetURL)
+		c.String(http.StatusBadRequest, "无效的URL格式")
 		return
 	}
 
 	if in(t.Host, viper.GetStringSlice("whiteList")) == false {
-		c.String(http.StatusOK, "target domain name is not in whiteList.")
+		log.Printf("[DockerHandler] 域名不在白名单中: %s", t.Host)
+		c.String(http.StatusForbidden, "目标域名不在白名单中")
 		return
 	}
 
-	// 解析路径，去除 "/k8s.gcr.io" 前缀，使其符合 Docker Registry 规范
 	cleanPath := strings.TrimPrefix(targetURL, fmt.Sprintf("https://%s", t.Host))
-
 	proxyURL := fmt.Sprintf("https://%s/v2%s", t.Host, cleanPath)
 	proxyURL = strings.ReplaceAll(proxyURL, "docker.io", "registry-1.docker.io")
 
-	//log.Printf("Proxying request to: %s", proxyURL)
-	// 创建 HTTP 请求，支持 HEAD/GET 方法
 	req, err := http.NewRequest(c.Request.Method, proxyURL, nil)
 	if err != nil {
-		log.Printf("Error creating request: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
+		log.Printf("[DockerHandler] 创建请求失败: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建请求失败"})
 		return
 	}
 
-	// 复制原请求的 Header
 	for key, values := range c.Request.Header {
 		for _, value := range values {
 			req.Header.Add(key, value)
 		}
 	}
 
-	// 发送请求
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("Error fetching from upstream: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch from upstream"})
+		log.Printf("[DockerHandler] 请求上游服务失败: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "请求上游服务失败"})
 		return
 	}
 	defer resp.Body.Close()
 
-	// 复制响应头
+	// 处理Docker Registry的认证
+	fmt.Println(resp.StatusCode, http.StatusUnauthorized, resp.StatusCode == http.StatusUnauthorized)
+	if resp.StatusCode == http.StatusUnauthorized {
+		authHeader := resp.Header.Get("www-Authenticate")
+		fmt.Println(authHeader)
+		if authHeader != "" {
+			// 解析认证信息
+			realm, service, scope := parseAuthHeader(authHeader)
+			// 获取认证token
+			token, err := getAuthToken(realm, service, scope)
+			if err != nil {
+				log.Printf("[DockerHandler] 获取认证token失败: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "认证失败"})
+				return
+			}
+
+			// 使用token重新发送请求
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+			resp, err = client.Do(req)
+			if err != nil {
+				log.Printf("[DockerHandler] 使用token重新请求失败: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "认证请求失败"})
+				return
+			}
+			defer resp.Body.Close()
+		}
+	}
+
 	for key, values := range resp.Header {
 		for _, value := range values {
 			c.Writer.Header().Add(key, value)
 		}
 	}
 
-	// 设置状态码
 	c.Status(resp.StatusCode)
 
-	// HEAD 请求不需要返回 body
 	if c.Request.Method != http.MethodHead {
-		io.Copy(c.Writer, resp.Body)
+		copied, err := io.Copy(c.Writer, resp.Body)
+		if err != nil {
+			log.Printf("[DockerHandler] 复制响应内容失败: %v", err)
+		} else {
+			log.Printf("[DockerHandler] 成功代理请求: %s, 传输大小: %d bytes", proxyURL, copied)
+		}
 	}
-
-	//log.Printf("Successfully proxied request for: %s", originalURL)
 }
