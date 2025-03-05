@@ -12,6 +12,7 @@ whiteList:
   - "quay.io"
   - "dl.k8s.io"
   - "cdn.dl.k8s.io"
+  - "registry.k8s.io"
 
 # Docker Hub认证配置
 dockerhub:
