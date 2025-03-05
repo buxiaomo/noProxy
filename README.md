@@ -58,7 +58,6 @@ docker pull duqqpwojzauy.cloud.sealos.io/docker.elastic.co/elasticsearch/elastic
 - docker.elastic.co
 - gcr.io
 - ghcr.io
-- k8s.gcr.io
 - nvcr.io
 - quay.io
 - dl.k8s.io
