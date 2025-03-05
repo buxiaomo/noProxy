@@ -132,6 +132,7 @@ func DockerHandler(c *gin.Context) {
 			realm, service, scope := parseAuthHeader(authHeader)
 			// 获取认证token
 			token, err := getAuthToken(realm, service, scope)
+			log.Printf("[DockerHandler] 获取到的token: %s", token)
 			if err != nil {
 				log.Printf("[DockerHandler] 获取认证token失败: %v", err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "认证失败"})
