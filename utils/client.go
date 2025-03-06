@@ -20,6 +20,10 @@ var (
 	cache *lru.Cache[string, []byte]
 	// 初始化锁
 	initOnce sync.Once
+
+	// 连接池监控指标
+	// activeConnections = expvar.NewInt("http_active_connections")
+	// idleConnections   = expvar.NewInt("http_idle_connections")
 )
 
 // InitHTTPClient 初始化HTTP客户端
@@ -34,15 +38,23 @@ func InitHTTPClient() {
 			}).DialContext,
 			MaxIdleConns:          100,
 			MaxIdleConnsPerHost:   10,
-			IdleConnTimeout:       90 * time.Second,
+			IdleConnTimeout:       30 * time.Second,
 			TLSHandshakeTimeout:   10 * time.Second,
 			ExpectContinueTimeout: 1 * time.Second,
 		}
 
+		// // 添加连接池监控
+		// go func() {
+		// 	for range time.Tick(time.Second * 5) {
+		// 		activeConnections.Set(int64(transport.NumConns()))
+		// 		idleConnections.Set(int64(transport.NumIdleConns()))
+		// 	}
+		// }()
+
 		// 创建HTTP客户端
 		httpClient = &http.Client{
 			Transport: transport,
-			Timeout:   30 * time.Minute,
+			Timeout:   5 * time.Minute,
 		}
 
 		// 初始化缓存
