@@ -2,7 +2,7 @@ install:
 	@go build
 	@cp -rf noProxy /usr/local/bin/noProxy
 	@[ -f /usr/local/etc/noProxy.yaml ] || cp -rf noProxy.yaml /usr/local/etc/noProxy.yaml
-	@cp -rf noProxy.service /etc/systemd/system/noProxy.service
+	@cp -rf noproxy.service /etc/systemd/system/noproxy.service
 	@systemctl daemon-reload
-	@systemctl restart noProxy.service
-	@systemctl enable noProxy.service
+	@systemctl restart noproxy.service
+	@systemctl enable noproxy.service
