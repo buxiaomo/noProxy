@@ -51,7 +51,7 @@ func main() {
 	})
 
 	r.Any("/v2/*proxyPath", handler.DockerHandler)
-	//r.GET("/d/*url", handler.ProxyHandler)
+	r.GET("/d/*url", handler.ProxyHandler)
 
 	if viper.GetString("domainName") != "" {
 		m := autocert.Manager{
