@@ -103,14 +103,7 @@ func DockerHandler(c *gin.Context) {
 	cleanPath := strings.TrimPrefix(targetURL, fmt.Sprintf("https://%s", t.Host))
 	proxyURL := fmt.Sprintf("https://%s/v2%s", t.Host, cleanPath)
 	proxyURL = strings.ReplaceAll(proxyURL, "docker.io", "registry-1.docker.io")
-	clientIP := c.ClientIP()
-	if !utils.IsChinaIP(clientIP) {
-		log.Printf("[DockerHandler] 客户端IP非国内，直接跳转: %s, 客户端IP: %s", proxyURL, clientIP)
-		c.Redirect(http.StatusFound, proxyURL)
-		return
-	}
-
-	log.Printf("[DockerHandler] 收到Docker镜像请求: %s, 客户端IP: %s", proxyURL, clientIP)
+	log.Printf("[DockerHandler] 收到Docker镜像请求: %s, 客户端IP: %s", proxyURL, c.ClientIP())
 	req, err := http.NewRequest(c.Request.Method, proxyURL, nil)
 	if err != nil {
 		log.Printf("[DockerHandler] 创建请求失败: %v", err)
