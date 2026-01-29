@@ -19,7 +19,14 @@ import (
 func ProxyHandler(c *gin.Context) {
 	DownloadUrl := c.Param("url")
 	DownloadUrl = DownloadUrl[1:len(DownloadUrl)]
-	log.Printf("[ProxyHandler] 收到下载请求: %s, 客户端IP: %s", DownloadUrl, c.ClientIP())
+	clientIP := c.ClientIP()
+	log.Printf("[ProxyHandler] 收到下载请求: %s, 客户端IP: %s", DownloadUrl, clientIP)
+
+	if !utils.IsChinaIP(clientIP) {
+		log.Printf("[ProxyHandler] 客户端IP非国内，直接跳转: %s, 客户端IP: %s", DownloadUrl, clientIP)
+		c.Redirect(http.StatusFound, DownloadUrl)
+		return
+	}
 
 	targetURL, err := url.Parse(DownloadUrl)
 	if err != nil {
@@ -84,6 +91,13 @@ func DockerHandler(c *gin.Context) {
 	if err != nil {
 		log.Printf("[DockerHandler] URL解析失败: %v, URL: %s", err, targetURL)
 		c.String(http.StatusBadRequest, "无效的URL格式")
+		return
+	}
+
+	clientIP := c.ClientIP()
+	if !utils.IsChinaIP(clientIP) {
+		log.Printf("[DockerHandler] 客户端IP非国内，直接跳转: %s, 客户端IP: %s", targetURL, clientIP)
+		c.Redirect(http.StatusFound, targetURL)
 		return
 	}
 
