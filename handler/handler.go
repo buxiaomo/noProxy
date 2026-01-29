@@ -95,7 +95,7 @@ func DockerHandler(c *gin.Context) {
 	}
 
 	clientIP := c.ClientIP()
-	if !utils.IsChinaIP(clientIP) {
+	if t.Host != "" && !utils.IsChinaIP(clientIP) {
 		log.Printf("[DockerHandler] 客户端IP非国内，直接跳转: %s, 客户端IP: %s", targetURL, clientIP)
 		c.Redirect(http.StatusFound, targetURL)
 		return
